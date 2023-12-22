@@ -15,6 +15,7 @@ The estimates of queries with multiple aggregate functions are obtained through 
 ```bash
 - cd GRELA 
 - tar zxvf data.tar.gz 
+```
 
 ## GRELA Training & Evaluation
 - We have provided the STATS dataset, which encompasses two types of workloads: 'static' and 'dynamic'. The static workload comprises only SQL queries, while the dynamic workload includes not just SQL queries but also insert, delete, and update statements. In both workloads, each SQL query is labeled with either a 'training' or 'testing' tag. The training queries, along with their true execution results—also known as ground truth or labels—are divided into training and validation data. This division is done to optimize the parameters of GRELA. On the other hand, the testing queries and their corresponding labels are utilized to assess GRELA's performance.
