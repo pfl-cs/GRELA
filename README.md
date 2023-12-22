@@ -17,6 +17,13 @@ The estimates of queries with multiple aggregate functions are obtained through 
 - tar zxvf data.tar.gz 
 ```
 
+## First thing to use the code
+- You need to make some configurations of the data locations. Run the following scripts.
+```bash
+- cd GRELA/src
+- python init/initialize.py
+```
+
 ## GRELA Training & Evaluation
 - We have provided the STATS dataset, which encompasses two types of workloads: 'static' and 'dynamic'. The static workload comprises only SQL queries, while the dynamic workload includes not just SQL queries but also insert, delete, and update statements. In both workloads, each SQL query is labeled with either a 'training' or 'testing' tag. The training queries, along with their true execution results—also known as ground truth or labels—are divided into training and validation data. This division is done to optimize the parameters of GRELA. On the other hand, the testing queries and their corresponding labels are utilized to assess GRELA's performance.
 - The script 'run.py' is designed to train or evaluate GRELA across various workloads. By assigning different values to the command-line arguments, users can control the script to perform a range of functions including  model training and performance evaluation.
