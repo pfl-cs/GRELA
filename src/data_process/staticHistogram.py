@@ -9,7 +9,6 @@ from src.utils import sql_utils
 class staticTableHistogram(object):
     def __init__(self, initial_data_path, n_bins, min_vals, max_vals, attr_no_map, table_size_threshold):
         self.table_name = os.path.basename(initial_data_path)[0:-4]
-        print(f'table = {self.table_name}')
 
         self.n_bins = n_bins
         self.min_vals = min_vals
@@ -54,17 +53,16 @@ class staticTableHistogram(object):
         for i in range(min_vals.shape[0]):
             boundary_points[i] += min_vals[i]
         boundary_points[:, -1] += 1
-        # print(f'boundary_points.shape = {boundary_points.shape}, len(lines) = {len(lines)}')
         self.boundary_points = boundary_points
 
         self.base_histogram = []
         for i in range(self.n_attrs):
             sorted_idxes = np.searchsorted(self.initial_data[i], boundary_points[i], side='left')
-            print(f'\tattr = {self.no_attr_map[i]}')
-            print(f'\t\tsorted_idxes[0:5] = {sorted_idxes[0:5]}')
-            print(f'\t\tsorted_idxes[-5:] = {sorted_idxes[-5:]}')
-            print(f'\t\tbounary_points[0:5] = {boundary_points[i][0:5]}')
-            print(f'\t\tinitial_data[0:5] = {self.initial_data[i][0:5]}')
+            # print(f'\tattr = {self.no_attr_map[i]}')
+            # print(f'\t\tsorted_idxes[0:5] = {sorted_idxes[0:5]}')
+            # print(f'\t\tsorted_idxes[-5:] = {sorted_idxes[-5:]}')
+            # print(f'\t\tbounary_points[0:5] = {boundary_points[i][0:5]}')
+            # print(f'\t\tinitial_data[0:5] = {self.initial_data[i][0:5]}')
             assert sorted_idxes[-1] == self.initial_data[i].shape[0]
             sorted_idxes_left_translation = copy.deepcopy(sorted_idxes)
             sorted_idxes_left_translation[1:] = sorted_idxes_left_translation[0:-1]
@@ -82,7 +80,6 @@ class staticTableHistogram(object):
                 no_attr_map[no] = attr
             print(f'table = {self.table_name}')
             print(f'\tfilter_conds = {filter_conds}')
-
 
 
         if filter_conds is None or len(filter_conds) == 0:
@@ -157,7 +154,7 @@ class staticDBHistogram(object):
         self.split_idxes = None
 
         self.query_and_results = None
-
+        print('\tInitialzing DB states...')
         for i in range(self.n_tables):
             table_name = self.no_table_map[i]
             fname = f'{table_name}.csv'
@@ -169,7 +166,6 @@ class staticDBHistogram(object):
                                       attr_no_map=attr_no_map_list[i],
                                       table_size_threshold=table_card_list[i])
             self.table_historgrams.append(th)
-        print('-' * 50)
 
 
     def build_db_states(self, workload_results_path):
@@ -194,7 +190,8 @@ class staticDBHistogram(object):
 
         all_queries = []
 
-        for i in range(len(lines)):
+        nlines = len(lines)
+        for i in range(nlines):
             line = lines[i].strip().lower()
             if line.startswith("t"): # train or train_sub or test or test_sub
                 if i >= start_line_no:
@@ -216,8 +213,6 @@ class staticDBHistogram(object):
                         assert line.startswith('test_single')
                         test_single_idxes.append(j)
                     all_queries.append(line)
-                    # if print_flag:
-                    #     print(f'query = {query}')
 
                     short_full_table_name_map, join_conds, filter_conds, analytic_functions = sql_utils.simple_parse_general_query(query)
                     filter_conds_list = []
@@ -241,8 +236,8 @@ class staticDBHistogram(object):
                     db_states.append(db_state)
                     j += 1
 
-            if i % 10000 == 0:
-                print(i, 'finished')
+            if i % 1000 == 0:
+                print(f'\tBuilding DB states: {(i * 100) // nlines}%', end='\r')
         db_states = np.array(db_states, dtype=np.float64)
         train_idxes = np.array(train_idxes, dtype=np.int64)
         train_sub_idxes = np.array(train_sub_idxes, dtype=np.int64)

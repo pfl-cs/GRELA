@@ -47,13 +47,13 @@ class tableHistogram(object):
             for i in range(min_vals.shape[0]):
                 boundary_points[i] += min_vals[i]
             boundary_points[:, -1] += 1
-            print(f'boundary_points.shape = {boundary_points.shape}, len(lines) = {len(lines)}')
+            # print(f'boundary_points.shape = {boundary_points.shape}, len(lines) = {len(lines)}')
 
             self.histogram = []
             for i in range(self.n_attrs):
                 sorted_idxes = np.searchsorted(initial_data[i], boundary_points[i], side='left')
-                print(
-                    f'table = {os.path.basename(initial_data_path)[0:-4]}, i = {i}, sorted_idxes[0:10] = {sorted_idxes[0:10]}, sorted_idxes[-10:] = {sorted_idxes[-10:]}')
+                # print(
+                #     f'table = {os.path.basename(initial_data_path)[0:-4]}, i = {i}, sorted_idxes[0:10] = {sorted_idxes[0:10]}, sorted_idxes[-10:] = {sorted_idxes[-10:]}')
                 assert sorted_idxes[-1] == initial_data[i].shape[0]
                 sorted_idxes_left_translation = copy.deepcopy(sorted_idxes)
                 sorted_idxes_left_translation[1:] = sorted_idxes_left_translation[0:-1]
@@ -64,11 +64,8 @@ class tableHistogram(object):
         else:
             self.histogram = np.zeros(shape=[self.n_attrs, self.n_bins], dtype=np.float64)
 
-        # print('histogram.shape =', self.histogram.shape)
-
     def insert(self, insert_values_str):
         _values = insert_values_str.split(",")
-        # values = copy.deepcopy(_values)
         assert len(_values) == self.n_attrs
 
         values = np.array([float(x) for x in _values], dtype=np.float64)
@@ -144,8 +141,6 @@ class databaseHistogram(object):
                 break
             terms = line.split(' ')
             path = terms[4][1:-1]
-            if not os.path.exists(path):
-                path = path.replace('/home/admin/lpf_files', '/home/lpf')
             assert os.path.exists(path)
             fname = os.path.basename(path)
             table_info = fname[0:-4]
@@ -153,9 +148,9 @@ class databaseHistogram(object):
             table_name = terms[0]
             table_path_map[table_name] = path
 
-        if len(table_path_map) != self.n_tables:
-            print('table_path_map =', table_path_map)
-            print('self.n_tables =', self.n_tables)
+        # if len(table_path_map) != self.n_tables:
+        #     print('table_path_map =', table_path_map)
+        #     print('self.n_tables =', self.n_tables)
         assert len(table_path_map) == self.n_tables
         for table_name in table_path_map:
             assert table_name in table_no_map

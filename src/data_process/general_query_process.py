@@ -188,8 +188,8 @@ def parse_queries(lines, table_no_map, attr_no_map_list, attr_no_types_list, att
     analytic_functions_list = []
     task_values_list = []
 
+    nlines = len(lines)
     for line_no, line in enumerate(lines):
-
         join_conds, equi_classes, attr_range_conds, relevant_tables, filter_conds, analytic_functions, task_values = parse_sql(
             line,
             table_no_map,
@@ -198,11 +198,6 @@ def parse_queries(lines, table_no_map, attr_no_map_list, attr_no_types_list, att
             attr_ranges_list,
             delim
         )
-        # if line_no == 109666:
-        #     print('-' * 50)
-        #     print(line)
-        #     print(task_values)
-        #     print('-' * 50)
         equi_classes_list.append(equi_classes)
         join_conds_list.append(join_conds)
         attr_range_conds_list.append(attr_range_conds)
@@ -210,6 +205,8 @@ def parse_queries(lines, table_no_map, attr_no_map_list, attr_no_types_list, att
         filter_conds_list.append(filter_conds)
         analytic_functions_list.append(analytic_functions)
         task_values_list.append(task_values)
+        if line_no % 1000 == 0:
+            print(f'\tParsing SQL queries: {(line_no * 100) // nlines}%', end='\r')
 
     possible_join_strs = []
     for equi_classes in equi_classes_list:

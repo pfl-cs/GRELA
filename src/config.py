@@ -22,7 +22,7 @@ def set_cfg(cfg):
     cfg.dataset.project_root = '.'
     cfg.dataset.FEATURE_DATA_DIR = ""
     cfg.dataset.mask_min_max = True
-    cfg.dataset.mysql_workload_fname = 'mysql_workload.sql'
+    cfg.dataset.workload_fname = 'simplified_workload.sql'
 
     cfg.dataset.tables_info_path = ''
     cfg.dataset.create_tables_path = ''
@@ -273,8 +273,6 @@ def getConfigs():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
     project_root = Path(cur_dir).parent.absolute()
     set_project_root(cfg, str(project_root))
-
-    print('project_root =', project_root)
 
     # params of cfg.dataset
     static_workload_dir = get_workload_dir(cfg, wl_type='static')

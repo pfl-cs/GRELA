@@ -145,6 +145,9 @@ class queryFeature(object):
                 join_id_idxes += self.n_tables
                 # print(join_id_idxes)
                 features[i][join_id_idxes] = 1
+
+            if i % 10000 == 0:
+                print(f'\tFeaturizing SQL queries: {(i * 100) // batch_size}%', end='\r')
         cursor = self.n_tables + self.n_possible_joins
         # encode conjunctive filter conds
         features[:, cursor:cursor + self.n_attrs_total * 2] = ((sql_attr_ranges_conds_batch - self.attr_lbds) / self.attr_range_measures) * 2.0 - 1
@@ -211,7 +214,7 @@ def process_workload_data(cfg, wl_type=None):
     else:
         if_static_workload = False
     workload_dir, feature_data_dir = config.get_feature_data_dir(cfg, wl_type)
-    workload_path = os.path.join(workload_dir, cfg.dataset.mysql_workload_fname)
+    workload_path = os.path.join(workload_dir, cfg.dataset.workload_fname)
     FileViewer.detect_and_create_dir(feature_data_dir)
 
     db_states_path = os.path.join(feature_data_dir, 'db_states.npy')
@@ -238,8 +241,6 @@ def process_workload_data(cfg, wl_type=None):
             all_files_exist = False
             break
 
-    print(f'feature_data_dir = {feature_data_dir}')
-    print(f'all_files_exist = {all_files_exist}')
     if all_files_exist:
         db_states = np.load(db_states_path)
         query_featurizations = np.load(query_featurizations_path)
@@ -254,11 +255,10 @@ def process_workload_data(cfg, wl_type=None):
         meta_infos = np.load(meta_infos_path).tolist()
         [db_states_dim, num_attrs, n_possible_joins, n_tasks] = meta_infos
 
-        print('db_states.shape =', db_states.shape)
-        print('query_featurizations.shape =', query_featurizations.shape)
-
-        print('train_idxes.shape =', train_idxes.shape)
-        print('test_idxes.shape =', test_idxes.shape)
+        # print('db_states.shape =', db_states.shape)
+        # print('query_featurizations.shape =', query_featurizations.shape)
+        # print('train_idxes.shape =', train_idxes.shape)
+        # print('test_idxes.shape =', test_idxes.shape)
 
         return (db_states, query_featurizations, task_values, task_masks, train_idxes, train_sub_idxes, test_idxes, test_sub_idxes, test_single_idxes, meta_infos)
 
@@ -270,15 +270,17 @@ def process_workload_data(cfg, wl_type=None):
     for attr_no_map in attr_no_map_list:
         num_attrs += len(attr_no_map)
 
+    print('    DB states:')
     keep_filter_info = True
-    start = time.time_ns()
     if if_static_workload:
         data_dir = cfg.dataset.data_dir
         data_feat = staticHistogram.staticDBHistogram(tables_info, data_dir, cfg.dataset.n_bins)
     else:
         data_feat = dynamicHistogram.databaseHistogram(tables_info, workload_path, cfg.dataset.n_bins)
     db_states, train_idxes, train_sub_idxes, test_idxes, test_sub_idxes, test_single_idxes, all_queries = data_feat.build_db_states(workload_path)
+    print(f'\tFinished building DB states.')
 
+    print('    Query featurizations:')
     queries_info = general_query_process.parse_queries(
         all_queries,
         table_no_map,
@@ -287,6 +289,7 @@ def process_workload_data(cfg, wl_type=None):
         attr_ranges_list,
         delim="||"
     )
+    print(f'\tFinished parsing SQL queries.')
 
     possible_join_attrs, join_conds_list, attr_range_conds_list, relevant_tables_list, \
     filter_conds_list, analytic_functions_list, valid_task_values_list = queries_info
@@ -294,16 +297,13 @@ def process_workload_data(cfg, wl_type=None):
     qF = queryFeature(table_no_map, attr_no_map_list, attr_no_types_list, attr_ranges_list, possible_join_attrs, keep_filter_info=keep_filter_info)
     attr_range_conds_batch = np.array(attr_range_conds_list, dtype=np.float64)
     query_featurizations = qF.encode_batch(join_conds_list, attr_range_conds_batch, relevant_tables_list)
+    print(f'\tFinished featurizing SQL queries')
 
+    print('    Relation graph:')
+    print('\tImplemented by masks...')
     n_possible_joins = qF.n_possible_joins
-
-    print('query_featurizations.shape =', query_featurizations.shape)
-    all_features = np.concatenate([db_states, query_featurizations], axis=1, dtype=db_states.dtype)
-    print('all_features.shape =', all_features.shape)
-
     db_states_dim = db_states.shape[1]
     assert db_states_dim == num_attrs * cfg.dataset.n_bins
-    query_featurizations_dim = query_featurizations.shape[1]
 
     # number analytic functions
     all_analytic_functions = ['count(*)']
@@ -353,8 +353,6 @@ def process_workload_data(cfg, wl_type=None):
     meta_infos = [db_states_dim, num_attrs, n_possible_joins, n_tasks]
     # histogram_feature_dim, query_part_feature_dim, join_pattern_dim, _n_parts, num_attrs]
     meta_infos = np.array(meta_infos, dtype=np.int64)
-    stop = time.time_ns()
-    print(f'+++++++total_time = {(stop - start) / 1e6}')
 
 
     np.save(db_states_path, db_states)
@@ -368,14 +366,13 @@ def process_workload_data(cfg, wl_type=None):
     np.save(test_single_idxes_path, test_single_idxes)
     np.save(meta_infos_path, meta_infos)
 
-    print('all_features.shape =', all_features.shape)
-    print('db_states.shape =', db_states.shape)
-    print('query_featurizations.shape =', query_featurizations.shape)
-    print('train_idxes.shape =', train_idxes.shape)
-    print('train_sub_idxes.shape =', train_sub_idxes.shape)
-    print('test_idxes.shape =', test_idxes.shape)
-    print('test_sub_idxes.shape =', test_sub_idxes.shape)
-    print('test_single_idxes.shape =', test_single_idxes.shape)
+    # print('db_states.shape =', db_states.shape)
+    # print('query_featurizations.shape =', query_featurizations.shape)
+    # print('train_idxes.shape =', train_idxes.shape)
+    # print('train_sub_idxes.shape =', train_sub_idxes.shape)
+    # print('test_idxes.shape =', test_idxes.shape)
+    # print('test_sub_idxes.shape =', test_sub_idxes.shape)
+    # print('test_single_idxes.shape =', test_single_idxes.shape)
 
     return (db_states, query_featurizations, task_values, task_masks, train_idxes, train_sub_idxes,
             test_idxes, test_sub_idxes, test_single_idxes, meta_infos.tolist())

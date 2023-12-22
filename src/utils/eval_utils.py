@@ -71,16 +71,17 @@ def visualize_err(preds, labels):
     # print(result_str)
     recall_tags = '|'.join(recall_tag_str_list)
     l = (len(recall_tags) - 8) // 2
-    s = '-' * l
-    print(f'{s}RelError{s}')
-    print(recall_tags)
+    # s = '-' * l
+    # print(f'{s}RelError{s}')
+    print(f'    RelError:')
+    print(f'\t{recall_tags}')
     # print('-' * len(s))
     for i in range(n_recalls):
         s = results_wo_dollars[i]
         tmp = ' ' * (max_len - len(s))
         results_wo_dollars[i] = s + tmp
-    print('|'.join(results_wo_dollars))
-
+    result_wo_dollar_str = '|'.join(results_wo_dollars)
+    print(f'\t{result_wo_dollar_str}')
 
 
 def calc_rel_err(preds, labels):

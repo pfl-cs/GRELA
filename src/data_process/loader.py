@@ -181,12 +181,12 @@ def load_workload_data(cfg):
         task_values = np.concatenate([train_task_values, test_task_values], axis=0, dtype=train_task_values.dtype)
         task_masks = np.concatenate([train_task_masks, test_task_masks], axis=0, dtype=train_task_masks.dtype)
 
-    print('db_states.shape =', db_states.shape)
-    print('query_featurizations.shape =', query_featurizations.shape)
-    print('train_idxes.shape =', train_idxes.shape)
-    print('train_sub_idxes.shape =', train_sub_idxes.shape)
-    print('test_idxes.shape =', test_idxes.shape)
-    print('test_sub_idxes.shape =', test_sub_idxes.shape)
+    # print('db_states.shape =', db_states.shape)
+    # print('query_featurizations.shape =', query_featurizations.shape)
+    # print('train_idxes.shape =', train_idxes.shape)
+    # print('train_sub_idxes.shape =', train_sub_idxes.shape)
+    # print('test_idxes.shape =', test_idxes.shape)
+    # print('test_sub_idxes.shape =', test_sub_idxes.shape)
 
     [n_bins, num_attrs, n_possible_joins, n_tasks] = meta_infos
 
@@ -208,13 +208,13 @@ def load_workload_data(cfg):
     train_query_featurizations, test_query_featurizations_list, join_pattern_dim = normalize_query_features(train_query_featurizations, [test_query_featurizations], n_possible_joins)
     test_query_featurizations = test_query_featurizations_list[0]
 
-    print(f'num_train = {train_db_states.shape[0]}')
+    # print(f'num_train = {train_db_states.shape[0]}')
     assert train_db_states.shape[0] == train_query_featurizations.shape[0]
-    print(f'num_test = {test_db_states.shape[0]}')
+    # print(f'num_test = {test_db_states.shape[0]}')
     assert test_db_states.shape[0] == test_query_featurizations.shape[0]
 
-    print(f'db_states.shape = {train_db_states.shape}')
-    print(f'query_featurizations.shape = {train_query_featurizations.shape}')
+    # print(f'db_states.shape = {train_db_states.shape}')
+    # print(f'query_featurizations.shape = {train_query_featurizations.shape}')
 
     meta_infos = [n_bins, train_query_featurizations.shape[1], num_attrs, join_pattern_dim, n_tasks]
     meta_infos = tuple(meta_infos)
@@ -401,7 +401,6 @@ def load_data(cfg):
     origin_test_task_masks = test_data[-1]
 
     (db_states_dim, query_featurizations_dim, num_attrs, n_possible_joins, n_tasks) = meta_infos
-    print(f'meta_infos = {meta_infos}')
 
     assert (db_states_dim == num_attrs * cfg.dataset.n_bins)
     cfg.dataset.query_part_feature_dim = query_featurizations_dim
@@ -486,10 +485,10 @@ def load_data(cfg):
     test_data = (test_db_states.astype(dtype), test_query_featurizations.astype(dtype), test_task_values.astype(dtype), test_task_masks)
     # validation_data = test_data
 
-    print('train_task_values.shape =', train_task_values.shape)
-    print('train_masks.shape =', train_task_masks.shape)
-    print('test_task_values.shape =', test_task_values.shape)
-    print('test_masks.shape =', test_task_masks.shape)
+    # print('train_task_values.shape =', train_task_values.shape)
+    # print('train_masks.shape =', train_task_masks.shape)
+    # print('test_task_values.shape =', test_task_values.shape)
+    # print('test_masks.shape =', test_task_masks.shape)
 
     return (train_data, validation_data, test_data, original_test_task_values, task_value_norm_params)
 

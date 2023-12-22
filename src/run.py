@@ -9,15 +9,11 @@ import torch
 import os
 from tqdm import tqdm
 import numpy as np
-
 import warnings
 warnings.filterwarnings("ignore")
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
-# DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-# filter out the true preds and true labels based on the mask
 def get_valid_labels(labels, preds, masks):
     labels_list = torch.reshape(labels, (-1,))
     preds_list = torch.reshape(preds, (-1,))
@@ -123,8 +119,9 @@ def eval_model(device, loader_eval, model, data_for_recalls=None):
             _preds.append(pred.detach().cpu())
             
     avg_loss = float(avg_loss / count)
-    print(f'Loss = {round(avg_loss, 5)}')
     if data_for_recalls is not None: # visualize recall values
+        print('Results on testing dataset:')
+        print(f'    Loss = {round(avg_loss, 5)}')
         true_labels, masks, task_value_norm_params = data_for_recalls
         _preds = np.concatenate(_preds)
         preds = np.zeros_like(true_labels, dtype=true_labels.dtype)
@@ -152,9 +149,6 @@ if __name__ == '__main__':
     loaders = (train_loader, validation_loader, _test_loader)
     data_for_recalls = (original_test_task_values, test_masks, task_value_norm_params)
 
-    print(f"num_tasks = {cfg.dataset.num_task}")
-    print(f"query_emb_dim = {cfg.model.query_emb_dim}")
-
     # TODO: This block is verbose and ugly. Try to make it more elegant.
     model_loaded = False
     print("Creating GRELA...")
@@ -162,25 +156,13 @@ if __name__ == '__main__':
     model_start_epoch = 0
     best_loss = 1e50
     if cfg.run.eval_model:
-        print("Loading ALECE encoder...")
+        # print("Loading GRELA...")
         model_ckpt_fname = get_model_ckpt_fname(cfg, model.model_name)
-        print(f'model_ckpt_fname = {model_ckpt_fname}')
 
         model, model_start_epoch, model_best_loss = ckpt_utils.load_model(cfg.run.ckpt_dir,
                                                                                  model_ckpt_fname,
                                                                                  model,
                                                                                  device=device)
-
-        # model, model_start_epoch, model_best_loss, train_loss = ckpt_utils.load_model_debug(cfg.run.ckpt_dir,
-        #                                                                          model_ckpt_fname,
-        #                                                                          model,
-        #                                                                          device=device)
-        # optimizer = create_optimizer(cfg, model.parameters())
-        # scheduler = create_scheduler(cfg, optimizer)
-        # ckpt_utils.save_ckpt(cfg.run.ckpt_dir, model_ckpt_fname, model_start_epoch - 1, model,
-        #                       optimizer=optimizer, MAX_CKPT_KEEP_NUM=cfg.run.MAX_CKPT_KEEP_NUM,
-        #                       train_loss=train_loss,
-        #                       start_epoch=model_start_epoch-1)
         if model_start_epoch >= 0:
             print("Finished loading GRELA.")
             eval_model(device, loader_eval=loaders[2], model=model, data_for_recalls=data_for_recalls)
@@ -188,8 +170,6 @@ if __name__ == '__main__':
         else:
             model_start_epoch = 0
             print("There is no available GRELA.")
-    else:
-        print("Finished creating GRELA.")
 
     # this step could be skipped if models are saved
     if cfg.run.train_model:
