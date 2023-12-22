@@ -146,13 +146,7 @@ def load_workload_data(cfg):
 
         train_idxes = train_idxes[train_start:train_end]
         train_sub_idxes = train_sub_idxes[train_sub_start:train_sub_end]
-        if not cfg.train.debug_mode:
-            train_idxes = np.concatenate([train_idxes, train_sub_idxes])
-        else:
-            l = (num_parts + test_from) * num_per_train
-            r = train_idxes.shape[0] - num_per_train
-            train_idxes2 = train_idxes[l:r]
-            train_idxes = np.concatenate([train_idxes, train_sub_idxes, train_idxes2])
+        train_idxes = np.concatenate([train_idxes, train_sub_idxes])
 
         train_idxes = np.sort(train_idxes)
 
@@ -472,33 +466,30 @@ def load_data(cfg):
     implementation
     '''
     # split the training data into two parts
+    N_train = int(N_train * 0.9)
+    validation_db_states = train_db_states[N_train:]
+    validation_query_featurizations = train_query_featurizations[N_train:]
+    validation_task_values = train_task_values[N_train:]
+    validation_task_masks = train_task_masks[N_train:]
 
-    # N_train = int(N_train * 0.85)
-    # validation_db_states = train_db_states[N_train:]
-    # validation_query_featurizations = train_query_featurizations[N_train:]
-    # validation_task_values = train_task_values[N_train:]
-    # validation_task_masks = train_task_masks[N_train:]
-    #
-    # train_db_states = train_db_states[0:N_train]
-    # train_query_featurizations = train_query_featurizations[0:N_train]
-    # train_task_values = train_task_values[0:N_train]
-    # train_task_masks = train_task_masks[0:N_train]
+    train_db_states = train_db_states[0:N_train]
+    train_query_featurizations = train_query_featurizations[0:N_train]
+    train_task_values = train_task_values[0:N_train]
+    train_task_masks = train_task_masks[0:N_train]
 
     dtype = np.float32
     if cfg.model.use_float64:
         dtype = np.float64
 
     train_data = (train_db_states.astype(dtype), train_query_featurizations.astype(dtype), train_task_values.astype(dtype), train_task_masks)
-    # validation_data = (validation_db_states.astype(dtype), validation_query_featurizations.astype(dtype), validation_task_values.astype(dtype), validation_task_masks)
+    validation_data = (validation_db_states.astype(dtype), validation_query_featurizations.astype(dtype), validation_task_values.astype(dtype), validation_task_masks)
     test_data = (test_db_states.astype(dtype), test_query_featurizations.astype(dtype), test_task_values.astype(dtype), test_task_masks)
-    validation_data = test_data
+    # validation_data = test_data
 
     print('train_task_values.shape =', train_task_values.shape)
     print('train_masks.shape =', train_task_masks.shape)
     print('test_task_values.shape =', test_task_values.shape)
     print('test_masks.shape =', test_task_masks.shape)
 
-    original_validation_task_values = original_test_task_values
-    
-    return (train_data, validation_data, test_data, original_validation_task_values, original_test_task_values, task_value_norm_params)
+    return (train_data, validation_data, test_data, original_test_task_values, task_value_norm_params)
 

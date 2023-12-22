@@ -21,8 +21,6 @@ def set_cfg(cfg):
     cfg.dataset.mask_ratio = 1
     cfg.dataset.project_root = '.'
     cfg.dataset.FEATURE_DATA_DIR = ""
-    cfg.dataset.NOJOIN_DATA_FEATURE_DIR = ""
-    cfg.dataset.card_estimates_dir = ''
     cfg.dataset.mask_min_max = True
     cfg.dataset.mysql_workload_fname = 'mysql_workload.sql'
 
@@ -44,26 +42,26 @@ def set_cfg(cfg):
 
 
     # ----------------------------------------------------------------------- #
-    # Training options
+    # Running options
     # ----------------------------------------------------------------------- #
-    cfg.train = CN()
+    cfg.run = CN()
 
     # Training (and validation) pipeline mode
-    cfg.train.mode = 'standard'
-    cfg.train.ckpt_dir = ''
-    cfg.train.encoder_ckpt_fname = 'encoder'
+    cfg.run.mode = 'standard'
+    cfg.run.ckpt_dir = ''
+    cfg.run.encoder_ckpt_fname = 'encoder'
 
     # TODO: Params that need to be overwrritten
-    cfg.train.batch_size = 128  # 16
-    cfg.train.gpu = 4
-    cfg.train.train_model = True
-    cfg.train.force_retrain = False
-    cfg.train.eval_model = False
-    cfg.train.MAX_CKPT_KEEP_NUM = 1
+    cfg.run.batch_size = 128  # 16
+    cfg.run.gpu = 4
+    cfg.run.train_model = True
+    cfg.run.force_retrain = False
+    cfg.run.eval_model = False
+    cfg.run.MAX_CKPT_KEEP_NUM = 1
 
-    cfg.train.pretrain_encoder = False
-    cfg.train.freeze_encoder = False
-    cfg.train.debug_mode = False
+    cfg.run.pretrain_encoder = False
+    cfg.run.freeze_encoder = False
+    cfg.run.debug_mode = False
 
 
     # ----------------------------------------------------------------------- #
@@ -243,16 +241,15 @@ def overwrite_from_args(args, cfg):
     cfg.graph.fix_keys_in_attn = args.fix_keys_in_attn
 
 
-    cfg.train.batch_size = args.batch_size
-    cfg.train.train_model = args.train_model
-    cfg.train.eval_model = args.eval_model
-    cfg.train.force_retrain = args.force_retrain
-    cfg.train.freeze_encoder = args.freeze_encoder
-    cfg.train.gpu = args.gpu
-    cfg.train.pretrain_encoder = args.pretrain_encoder
-    cfg.train.MAX_CKPT_KEEP_NUM = args.MAX_CKPT_KEEP_NUM
-    cfg.train.task = args.task
-    cfg.train.debug_mode = args.debug_mode
+    cfg.run.batch_size = args.batch_size
+    cfg.run.train_model = args.train_model
+    cfg.run.eval_model = args.eval_model
+    cfg.run.force_retrain = args.force_retrain
+    cfg.run.freeze_encoder = args.freeze_encoder
+    cfg.run.gpu = args.gpu
+    cfg.run.pretrain_encoder = args.pretrain_encoder
+    cfg.run.MAX_CKPT_KEEP_NUM = args.MAX_CKPT_KEEP_NUM
+    cfg.run.task = args.task
 
     cfg.optim.base_lr = args.base_lr
     cfg.optim.max_epoch = args.max_epoch
@@ -264,7 +261,7 @@ def set_project_root(cfg, project_root):
     cfg.dataset.project_root = project_root
     workload_dir = os.path.join(project_root, f'data/{cfg.dataset.name}/workload/{cfg.dataset.wl_type}')
     cfg.dataset.FEATURE_DATA_DIR = os.path.join(workload_dir, f'histogram_{cfg.dataset.n_bins}_features')
-    cfg.train.ckpt_dir = os.path.join(project_root, f'ckpt/{cfg.dataset.name}/{cfg.dataset.wl_type}')
+    cfg.run.ckpt_dir = os.path.join(project_root, f'ckpt/{cfg.dataset.name}/{cfg.dataset.wl_type}')
 
 
 def getConfigs():
@@ -291,7 +288,7 @@ def getConfigs():
 def get_model_ckpt_fname(cfg, model_name):
     assert model_name is not None
     if model_name is None:
-        model_name = cfg.train.encoder_ckpt_fname
+        model_name = cfg.run.encoder_ckpt_fname
     s1 = f'{int(cfg.encoder.use_s_ff)}{int(cfg.encoder.use_q_ff)}{int(cfg.graph.use_ff)}{int(cfg.graph.fix_keys_in_attn)}'
     s2 = f'{cfg.encoder.num_s_self_attn_layers}{cfg.encoder.num_q_cross_attn_layers}{cfg.graph.num_attn_layers}{cfg.encoder.ff_mlp_num_layers}'
     s3 = f'{int(math.log2(cfg.encoder.attn_head_key_dim+1))}_{int(math.log2(cfg.model.query_emb_dim+1))}'
@@ -310,7 +307,5 @@ def get_feature_data_dir(cfg, wl_type=None):
     workload_dir = get_workload_dir(cfg, wl_type)
     data_featurizations_type = f'histogram_{cfg.dataset.n_bins}'
     feature_data_dir = os.path.join(workload_dir, f'{data_featurizations_type}_features')
-    data_feat_ckpt_dirname = f'{data_featurizations_type}_ckpt'
-    data_feat_ckpt_dir = os.path.join(workload_dir, data_feat_ckpt_dirname)
 
-    return workload_dir, feature_data_dir, data_feat_ckpt_dir
+    return workload_dir, feature_data_dir

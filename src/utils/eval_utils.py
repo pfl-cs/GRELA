@@ -35,7 +35,7 @@ def process_ratio(_ratio):
     if ratio < 0.001:
         return '<$0.001$'
     else:
-        return f'${ratio}$'
+        return f'${round(ratio, 3)}$'
 
 def visualize_err(preds, labels):
     assert preds.shape == labels.shape
@@ -46,10 +46,10 @@ def visualize_err(preds, labels):
 
     err = calc_rel_err(preds, labels)
     err = np.sort(err)
-    recalls = np.array([0.5, 1, 5, 10], dtype=np.float64)
+    recall_vals = [0.5, 1, 5, 10]
+    recalls = np.array(recall_vals, dtype=np.float64)
 
-    s = '-' * 10
-    print(f'{s}RelError{s}')
+
     n_vals = err.shape[0]
     idxes = np.searchsorted(err, recalls, side='left')
     idxes = idxes.tolist()
@@ -59,10 +59,27 @@ def visualize_err(preds, labels):
         result = process_ratio(1.0 * idx / n_vals)
         results.append(result)
         results_wo_dollars.append(result[1:-1])
-    result_str = ' & '.join(results)
-    result_wo_dollars_str = ', '.join(results_wo_dollars)
-    print(result_str)
-    print(result_wo_dollars_str)
+    # result_str = ' & '.join(results)
+    # result_wo_dollars_str = ', '.join(results_wo_dollars)
+    recall_tag_str_list = [f'Recall-{x}' for x in recall_vals]
+    max_len = len(recall_tag_str_list[0]) + 1
+    n_recalls = len(recall_vals)
+    for i in range(n_recalls):
+        s = recall_tag_str_list[i]
+        tmp = ' ' * (max_len - len(s))
+        recall_tag_str_list[i] = s + tmp
+    # print(result_str)
+    recall_tags = '|'.join(recall_tag_str_list)
+    l = (len(recall_tags) - 8) // 2
+    s = '-' * l
+    print(f'{s}RelError{s}')
+    print(recall_tags)
+    # print('-' * len(s))
+    for i in range(n_recalls):
+        s = results_wo_dollars[i]
+        tmp = ' ' * (max_len - len(s))
+        results_wo_dollars[i] = s + tmp
+    print('|'.join(results_wo_dollars))
 
 
 

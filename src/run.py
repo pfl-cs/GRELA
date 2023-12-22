@@ -8,6 +8,7 @@ from config import getConfigs, get_model_ckpt_fname
 import torch
 import os
 from tqdm import tqdm
+import numpy as np
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -27,9 +28,9 @@ def get_valid_labels(labels, preds, masks):
 
 
 def train_model(cfg, device, loaders, model, optimizer, scheduler, max_epoch, start_epoch=0, best_loss=1e50):
-    if not os.path.exists(cfg.train.ckpt_dir):
-        print(f"[INFO] creating the directory {cfg.train.ckpt_dir} to save checkpoints")
-        os.makedirs(cfg.train.ckpt_dir)
+    if not os.path.exists(cfg.run.ckpt_dir):
+        print(f"[INFO] creating the directory {cfg.run.ckpt_dir} to save checkpoints")
+        os.makedirs(cfg.run.ckpt_dir)
 
     model.to(device)
     model.train()
@@ -44,8 +45,8 @@ def train_model(cfg, device, loaders, model, optimizer, scheduler, max_epoch, st
         if val_loss < best_loss:
             best_loss = val_loss
             ckpt_fname = get_model_ckpt_fname(cfg, model.model_name)
-            ckpt_utils.save_ckpt(cfg.train.ckpt_dir, ckpt_fname, cur_epoch + start_epoch, model, optimizer,
-                                 cfg.train.MAX_CKPT_KEEP_NUM, train_loss=train_loss, val_loss=val_loss)
+            ckpt_utils.save_ckpt(cfg.run.ckpt_dir, ckpt_fname, cur_epoch + start_epoch, model, optimizer,
+                                 cfg.run.MAX_CKPT_KEEP_NUM, train_loss=train_loss, val_loss=val_loss)
         
         print(f'epoch-{cur_epoch + start_epoch} \t \
                 train_loss = {train_loss} \t \
@@ -92,7 +93,7 @@ def train_model_epoch(device, loader_train, model, optimizer, scheduler):
     return avg_loss
 
 
-def eval_model(device, loader_eval, model):
+def eval_model(device, loader_eval, model, data_for_recalls=None):
     model.eval()
 
     avg_loss = 0
@@ -122,22 +123,34 @@ def eval_model(device, loader_eval, model):
             _preds.append(pred.detach().cpu())
             
     avg_loss = float(avg_loss / count)
-    torch.cuda.empty_cache()
     print(f'Loss = {round(avg_loss, 5)}')
+    if data_for_recalls is not None: # visualize recall values
+        true_labels, masks, task_value_norm_params = data_for_recalls
+        _preds = np.concatenate(_preds)
+        preds = np.zeros_like(true_labels, dtype=true_labels.dtype)
+        idxes = np.where(masks > 0.5)
+        preds[idxes] = _preds
+        preds, _ = recover_task_values(preds, masks, buffer=task_value_norm_params)
+        preds = preds[idxes]
+        true_labels = true_labels[idxes]
+        eval_utils.visualize_err(preds, true_labels)
+
+    torch.cuda.empty_cache()
     return avg_loss, _preds
 
 
 if __name__ == '__main__':
     cfg = getConfigs()
-    device = torch.device(f'cuda:{cfg.train.gpu}')
+    device = torch.device(f'cuda:{cfg.run.gpu}')
     torch.cuda.empty_cache()
     print(f'device = {device}')
 
-    (train_data, validation_data, test_data, original_validation_task_values, original_test_task_values, task_value_norm_params) = load_data(cfg)
+    (train_data, validation_data, test_data, original_test_task_values, task_value_norm_params) = load_data(cfg)
     test_masks = test_data[-1]
 
-    train_loader, validation_loader, _test_loader = create_loaders(train_data, validation_data, test_data, cfg.train.batch_size)
+    train_loader, validation_loader, _test_loader = create_loaders(train_data, validation_data, test_data, cfg.run.batch_size)
     loaders = (train_loader, validation_loader, _test_loader)
+    data_for_recalls = (original_test_task_values, test_masks, task_value_norm_params)
 
     print(f"num_tasks = {cfg.dataset.num_task}")
     print(f"query_emb_dim = {cfg.model.query_emb_dim}")
@@ -148,29 +161,29 @@ if __name__ == '__main__':
     model = GRELA(cfg)
     model_start_epoch = 0
     best_loss = 1e50
-    if cfg.train.eval_model:
+    if cfg.run.eval_model:
         print("Loading ALECE encoder...")
         model_ckpt_fname = get_model_ckpt_fname(cfg, model.model_name)
         print(f'model_ckpt_fname = {model_ckpt_fname}')
 
-        model, model_start_epoch, model_best_loss = ckpt_utils.load_model(cfg.train.ckpt_dir,
+        model, model_start_epoch, model_best_loss = ckpt_utils.load_model(cfg.run.ckpt_dir,
                                                                                  model_ckpt_fname,
                                                                                  model,
                                                                                  device=device)
 
-        # model, model_start_epoch, model_best_loss, train_loss = ckpt_utils.load_model_debug(cfg.train.ckpt_dir,
+        # model, model_start_epoch, model_best_loss, train_loss = ckpt_utils.load_model_debug(cfg.run.ckpt_dir,
         #                                                                          model_ckpt_fname,
         #                                                                          model,
         #                                                                          device=device)
         # optimizer = create_optimizer(cfg, model.parameters())
         # scheduler = create_scheduler(cfg, optimizer)
-        # ckpt_utils.save_ckpt(cfg.train.ckpt_dir, model_ckpt_fname, model_start_epoch - 1, model,
-        #                       optimizer=optimizer, MAX_CKPT_KEEP_NUM=cfg.train.MAX_CKPT_KEEP_NUM,
+        # ckpt_utils.save_ckpt(cfg.run.ckpt_dir, model_ckpt_fname, model_start_epoch - 1, model,
+        #                       optimizer=optimizer, MAX_CKPT_KEEP_NUM=cfg.run.MAX_CKPT_KEEP_NUM,
         #                       train_loss=train_loss,
         #                       start_epoch=model_start_epoch-1)
         if model_start_epoch >= 0:
             print("Finished loading GRELA.")
-            eval_model(device, loader_eval=loaders[2], model=model)
+            eval_model(device, loader_eval=loaders[2], model=model, data_for_recalls=data_for_recalls)
             model_loaded = True
         else:
             model_start_epoch = 0
@@ -179,7 +192,7 @@ if __name__ == '__main__':
         print("Finished creating GRELA.")
 
     # this step could be skipped if models are saved
-    if cfg.train.train_model:
+    if cfg.run.train_model:
         model.to(device)
         optimizer = create_optimizer(cfg, model.parameters())
         scheduler = create_scheduler(cfg, optimizer)
@@ -192,5 +205,5 @@ if __name__ == '__main__':
 # python run.py --train_model True --eval_model False --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 7
 # python run.py --train_model False --eval_model True --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 7
 
-# python run.py --train_model True --eval_model False --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 6 --wl_type ins_heavy
-# python run.py --train_model False --eval_model True --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 6 --wl_type ins_heavy
+# python run.py --train_model True --eval_model False --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 6 --wl_type dynamic
+# python run.py --train_model False --eval_model True --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 6 --wl_type dynamic

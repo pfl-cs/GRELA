@@ -205,12 +205,12 @@ def get_valid_data(db_states, query_featurizations, task_values, task_masks, zer
 def process_workload_data(cfg, wl_type=None):
     if wl_type is None:
         wl_type = cfg.dataset.wl_type
-    assert cfg.dataset.wl_type == 'static' or cfg.dataset.wl_type == 'ins_heavy'
+    assert cfg.dataset.wl_type == 'static' or cfg.dataset.wl_type == 'dynamic'
     if wl_type == 'static':
         if_static_workload = True
     else:
         if_static_workload = False
-    workload_dir, feature_data_dir, data_feat_ckpt_dir = config.get_feature_data_dir(cfg, wl_type)
+    workload_dir, feature_data_dir = config.get_feature_data_dir(cfg, wl_type)
     workload_path = os.path.join(workload_dir, cfg.dataset.mysql_workload_fname)
     FileViewer.detect_and_create_dir(feature_data_dir)
 
@@ -274,9 +274,9 @@ def process_workload_data(cfg, wl_type=None):
     start = time.time_ns()
     if if_static_workload:
         data_dir = cfg.dataset.data_dir
-        data_feat = staticHistogram.staticDBHistogram(tables_info, data_dir, cfg.dataset.n_bins, data_feat_ckpt_dir)
+        data_feat = staticHistogram.staticDBHistogram(tables_info, data_dir, cfg.dataset.n_bins)
     else:
-        data_feat = dynamicHistogram.databaseHistogram(tables_info, workload_path, cfg.dataset.n_bins, data_feat_ckpt_dir)
+        data_feat = dynamicHistogram.databaseHistogram(tables_info, workload_path, cfg.dataset.n_bins)
     db_states, train_idxes, train_sub_idxes, test_idxes, test_sub_idxes, test_single_idxes, all_queries = data_feat.build_db_states(workload_path)
 
     queries_info = general_query_process.parse_queries(
@@ -386,4 +386,4 @@ if __name__ == '__main__':
     process_workload_data(cfg)
 
 # python data_process/feature.py --data STATS --wl_type static
-# python data_process/feature.py --data STATS --wl_type ins_heavy
+# python data_process/feature.py --data STATS --wl_type dynamic

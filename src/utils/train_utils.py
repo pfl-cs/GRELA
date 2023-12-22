@@ -7,17 +7,6 @@ import sys
 sys.path.append("../../")
 
 def compute_loss(loss_fun, pred, true, task_type=None):
-    """
-    Compute loss and prediction score
-
-    Args:
-        pred (torch.tensor): Unnormalized prediction
-        true (torch.tensor): Ground truth labels
-        task_type (str): User specified task type
-
-    Returns: Loss, normalized prediction score
-
-    """
     bce_loss = nn.BCEWithLogitsLoss()
     mse_loss = nn.MSELoss()
 

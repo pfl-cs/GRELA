@@ -108,7 +108,7 @@ class tableHistogram(object):
 
 
 class databaseHistogram(object):
-    def __init__(self, tables_info, workload_path, n_bins, checkpoint_dir):
+    def __init__(self, tables_info, workload_path, n_bins):
         table_no_map, no_table_map, table_card_list, attr_no_map_list \
             , attr_no_types_list, attr_ranges_list = tables_info
         self.table_no_map = table_no_map
@@ -126,8 +126,6 @@ class databaseHistogram(object):
         self.split_idxes = None
 
         self.query_and_results = None
-        self.checkpoint_dir = checkpoint_dir
-        FileViewer.detect_and_create_dir(self.checkpoint_dir)
 
         print('\tInitialzing DB states...')
         for i in range(self.n_tables):

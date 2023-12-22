@@ -138,7 +138,7 @@ class staticTableHistogram(object):
 
 
 class staticDBHistogram(object):
-    def __init__(self, tables_info, data_dir, n_bins, checkpoint_dir):
+    def __init__(self, tables_info, data_dir, n_bins):
         table_no_map, no_table_map, table_card_list, attr_no_map_list \
             , attr_no_types_list, attr_ranges_list = tables_info
         self.table_no_map = table_no_map
