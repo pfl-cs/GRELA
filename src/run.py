@@ -179,11 +179,3 @@ if __name__ == '__main__':
         max_epoch = cfg.optim.max_epoch
         train_model(cfg, device, loaders, model, optimizer, scheduler, max_epoch,
                     start_epoch=model_start_epoch, best_loss=best_loss)
-
-
-# GRELA
-# python run.py --train_model True --eval_model False --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 7
-# python run.py --train_model False --eval_model True --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 7
-
-# python run.py --train_model True --eval_model False --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 6 --wl_type dynamic
-# python run.py --train_model False --eval_model True --max_epoch 400 --base_lr 1e-5 --num_s_self_attn_layers 6 --num_q_cross_attn_layers 6 --num_g_attn_layers 6 --attn_head_key_dim 1024 --query_emb_dim 1024 --fix_keys_in_attn False --gpu 6 --wl_type dynamic

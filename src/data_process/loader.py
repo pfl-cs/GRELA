@@ -483,7 +483,6 @@ def load_data(cfg):
     train_data = (train_db_states.astype(dtype), train_query_featurizations.astype(dtype), train_task_values.astype(dtype), train_task_masks)
     validation_data = (validation_db_states.astype(dtype), validation_query_featurizations.astype(dtype), validation_task_values.astype(dtype), validation_task_masks)
     test_data = (test_db_states.astype(dtype), test_query_featurizations.astype(dtype), test_task_values.astype(dtype), test_task_masks)
-    # validation_data = test_data
 
     # print('train_task_values.shape =', train_task_values.shape)
     # print('train_masks.shape =', train_task_masks.shape)
