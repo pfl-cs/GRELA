@@ -14,8 +14,6 @@ The estimates of queries with multiple aggregate functions are obtained through 
 
 ```bash
 - cd GRELA
-# - Download the dataset (https://drive.google.com/file/xxxx)
-# - Put data.tar.gz in GRELA/
 - tar zxvf data.tar.gz
 ```
 
