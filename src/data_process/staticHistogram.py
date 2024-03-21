@@ -20,7 +20,6 @@ class staticTableHistogram(object):
             self.no_attr_map[no] = attr
 
         self.n_attrs = len(attr_no_map)
-        # self.attr_type_list = attr_type_list
         arange_idxes = np.reshape(np.arange(0, self.n_attrs, dtype=np.int64), [1, -1])
         self.idxes = np.concatenate([arange_idxes, np.zeros(shape=arange_idxes.shape, dtype=arange_idxes.dtype)],
                                     axis=0)

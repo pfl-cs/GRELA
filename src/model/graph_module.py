@@ -34,7 +34,6 @@ class Graph(nn.Module):
         self.use_float64 = use_float64
         self.fix_keys_in_attn = fix_keys_in_attn
 
-
         self.attn_layers = torch.nn.ModuleList([
             attn.attnBlock(
                 self.query_emb_dim,

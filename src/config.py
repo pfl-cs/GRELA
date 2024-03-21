@@ -197,7 +197,6 @@ def get_arg_parser():
     parser.add_argument('--base_lr', type=float, default=1e-4, help='')
 
 
-
     args = parser.parse_args()
     return args
 
@@ -240,7 +239,7 @@ def overwrite_from_args(args, cfg):
     cfg.graph.use_ff = args.use_g_ff
     cfg.graph.fix_keys_in_attn = args.fix_keys_in_attn
 
-
+    # cfg.run
     cfg.run.batch_size = args.batch_size
     cfg.run.train_model = args.train_model
     cfg.run.eval_model = args.eval_model

@@ -125,7 +125,7 @@ class Encoder(nn.Module):
     def forward(self, s, q):
         """
         :param s: Shape `(batch_size, num_attrs, n_bins)
-        :param q: Shape `(batch_size, 1, query_part_features_dim)
+        :param q: Shape `(batch_size, 1, query_part_feature_dim)
         :return:
         """
         s = torch.reshape(s, [-1, self.num_attrs, self.n_bins])

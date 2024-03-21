@@ -95,6 +95,7 @@ def initialize(cfg):
         generate_full_workload(simplified_workload_path, mysql_workload_path, table_attr_names_map)
 
 
+
 if __name__ == '__main__':
     cfg = config.getConfigs()
     initialize(cfg)

@@ -13,7 +13,7 @@ class dbDataset(Dataset):
         self.X = data[0]
         self.Q = data[1]
         self.labels = data[2]
-        self.masks= data[3]
+        self.masks = data[3]
 
     def __len__(self):
         return self.labels.shape[0]
@@ -459,11 +459,6 @@ def load_data(cfg):
     train_task_values = train_task_values[shuffle_idxes]
     train_task_masks = train_task_masks[shuffle_idxes]
 
-    '''
-    The following code snippet is only used for testing
-    overfitting issue that might be caused by PyTorch 
-    implementation
-    '''
     # split the training data into two parts
     N_train = int(N_train * 0.9)
     validation_db_states = train_db_states[N_train:]
@@ -490,4 +485,3 @@ def load_data(cfg):
     # print('test_masks.shape =', test_task_masks.shape)
 
     return (train_data, validation_data, test_data, original_test_task_values, task_value_norm_params)
-

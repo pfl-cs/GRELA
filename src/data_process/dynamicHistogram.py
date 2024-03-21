@@ -33,7 +33,6 @@ class tableHistogram(object):
                 for i, _term in enumerate(terms):
                     term = _term.strip()
                     if len(term) > 0:
-                        # print('term =', term)
                         val = float(term)
                         initial_data[i].append(val)
             initial_data = [np.sort(np.array(data_i, dtype=np.float64)) for data_i in initial_data]

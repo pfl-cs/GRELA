@@ -134,7 +134,6 @@ def load_tables_info_from_file(table_names, tables_info_path):
     return (table_no_map, no_table_map, table_card_list, attr_no_map_list, attr_no_types_list, attr_ranges_list)
 
 
-
 def get_tables_info(cfg):
     create_tables_path = cfg.dataset.create_tables_path
     _, table_attr_types_map = sql_utils.get_all_table_attr_infos(create_tables_path)

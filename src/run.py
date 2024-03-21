@@ -75,9 +75,6 @@ def train_model_epoch(device, loader_train, model, optimizer, scheduler):
         loss.backward()
         optimizer.step()
 
-        # stats related
-        # NOTE: the batch size here does not refer to the {X, Q} batch pair
-        # but refers to the {X, Q, T_i} triplets
         loop_train.set_description(f"Progress")
         batch_size = labels.shape[0]
         count += batch_size

@@ -3,7 +3,6 @@ import sys
 sys.path.append("../..")
 from src.utils import sql_utils, file_utils, data_utils
 
-
 epsilon_for_float = 1e-6
 
 def isnumber(s):

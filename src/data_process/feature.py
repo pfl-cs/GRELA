@@ -351,7 +351,6 @@ def process_workload_data(cfg, wl_type=None):
         task_masks[i][idxes] = 1
 
     meta_infos = [db_states_dim, num_attrs, n_possible_joins, n_tasks]
-    # histogram_feature_dim, query_part_feature_dim, join_pattern_dim, _n_parts, num_attrs]
     meta_infos = np.array(meta_infos, dtype=np.int64)
 
 
