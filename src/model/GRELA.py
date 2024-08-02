@@ -62,8 +62,8 @@ class GRELA(nn.Module):
         params = self.parameters()
         print('-' * 50)
         for p in params:
-            # if p.requires_grad:
-            print(p.name)
+            if p.requires_grad:
+                print(p.name)
         print('-' * 50)
 
 

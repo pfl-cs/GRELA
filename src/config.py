@@ -14,7 +14,6 @@ def set_cfg(cfg):
     # ----------------------------------------------------------------------- #
     cfg.dataset = CN()
 
-    # Name of the dataset
     cfg.dataset.name = 'STATS'
     cfg.dataset.wl_type = 'static'
     # TODO: Params that need to be overwrritten

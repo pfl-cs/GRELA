@@ -70,10 +70,14 @@ class Graph(nn.Module):
         attn_keys = torch.vstack((_task_embs, _data_embs))
         attn_keys = attn_keys[None, :, :]
         task_embs = _task_embs[None, :, :]
-        # data_embs_3d = _data_embs[None, :, :]
+
         for i, layer in enumerate(self.attn_layers):
-            # attn_keys = torch.cat((task_embs, data_embs_3d), dim=1)
             task_embs = layer(attn_keys, task_embs, attn_mask=task_attn_mask)
+
+        # data_embs_3d = _data_embs[None, :, :]
+        # for i, layer in enumerate(self.attn_layers):
+        #   attn_keys = torch.cat((task_embs, data_embs_3d), dim=1)
+        #   task_embs = layer(attn_keys, task_embs, attn_mask=task_attn_mask)
 
         for i in range(self.num_weight_tied_layers):
             if not self.fix_keys_in_attn:

@@ -173,7 +173,7 @@ class staticDBHistogram(object):
 
         start_line_no = 0
         for i, line in enumerate(lines):
-            if line.startswith('--'):# and line.find('part {0:d}'.format(self.start_from_part_no)) >= 0:
+            if line.startswith('--'):
                 start_line_no = i + 1
                 break
 

@@ -1,7 +1,7 @@
 # GRELA: Exploiting Graph Representation Learning in Effective Approximate Query Processing 
 
-We propose a Graph REpresentation Learning based model for Approximate query processing. The core idea is to model the aggregate functions and the query predicates as task and query nodes respectively in a graph and learn appropriate node embeddings with GRELA's two modules for them. In particular, the Encoder module coalesce query predicates and underlying data into embeddings for query nodes. The Graph module bridges task nodes and query nodes so that each task node can aggregate the information from its neighborhood into its embedding. 
-The estimates of queries with multiple aggregate functions are obtained through the inner products of the corresponding query and task embeddings.
+We propose a Graph REpresentation Learning based model for Approximate query processing. The core idea is to model the aggregate functions and the query predicates as task and query nodes respectively in a graph and learn appropriate node embeddings with GRELA's two modules for them. In particular, the Encoder module coalesce query predicates and underlying data into embeddings for clause nodes. The Graph module bridges task nodes and clause nodes so that each task node can aggregate the information from its neighborhood into its embedding. 
+The estimates of queries with multiple aggregate functions are obtained through the inner products of the corresponding clause and task embeddings.
 
 ## Requirements
 

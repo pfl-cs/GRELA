@@ -249,8 +249,6 @@ def get_valid_data(data):
     task_masks = task_masks[idxes]
     return (db_states, query_featurizations, task_values, task_masks)
 
-
-# # TODO: futher optimization
 def get_task_value_norm_params(train_task_values, train_task_masks, test_task_values, test_task_masks, threshold, buffer_path):
     # to fully simulate a real-world setting
     # the mininum and maximum values of an attribute are based

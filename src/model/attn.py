@@ -76,9 +76,9 @@ class attnBlock(nn.Module):
     def forward(self, x, q, attn_mask=None):
         # Multi-head self-attention output
         attn_output, _ = self.mha(
-            query=q,  # Query Q tensor.
-            value=x,  # Value V tensor.
-            key=x,  # Key K tensor.
+            query=q,  # Query tensor.
+            value=x,  # Value tensor.
+            key=x,  # Key tensor.
             attn_mask=attn_mask  # A boolean mask that prevents attention to certain positions.
         )
 

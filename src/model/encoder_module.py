@@ -159,4 +159,3 @@ class Encoder(nn.Module):
         x = torch.reshape(q, [-1, self.query_emb_dim])
 
         return x
-

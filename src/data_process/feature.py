@@ -16,7 +16,8 @@ class queryFeature(object):
         """
         :param attr_ranges_list: list with each element is a n x 2 numpy float matrix.
         denoting the ith table has n attrs. These n attrs' range are represented by this matrix.
-        :param possible_join_attrs: N * 4 numpy int matrx with each row looks like [table_no1, table_no1.attr_no, table_no2, table_no2.attr_no]
+        :param possible_join_attrs: N * 4 numpy int matrx with each row looks like 
+        [table_no1, table_no1.attr_no, table_no2, table_no2.attr_no]
         """
 
         self.table_no_map, self.attr_no_map_list, self.attr_no_types_list, self.attr_ranges_list \

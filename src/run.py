@@ -146,7 +146,6 @@ if __name__ == '__main__':
     loaders = (train_loader, validation_loader, _test_loader)
     data_for_recalls = (original_test_task_values, test_masks, task_value_norm_params)
 
-    # TODO: This block is verbose and ugly. Try to make it more elegant.
     model_loaded = False
     print("Creating GRELA...")
     model = GRELA(cfg)
