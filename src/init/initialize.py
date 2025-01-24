@@ -86,13 +86,17 @@ def initialize(cfg):
     if project_root.endswith('/'):
         project_root = project_root[0:-1]
 
-    wl_types = ['static', 'dynamic']
+    # wl_types = ['static', 'dynamic', 'dist_shift', 'group_by', 'enrich']
+    # wl_types = ['static']
+    wl_types = ['ins_heavy']
     for wl_type in wl_types:
         workload_dir = config.get_workload_dir(cfg, wl_type)
         simplified_workload_path = os.path.join(workload_dir, 'simplified_workload.sql')
-        replace_term(simplified_workload_path, old_term='$PROJECT_ROOT$', new_term=project_root)
-        mysql_workload_path = os.path.join(workload_dir, 'mysql_workload.sql')
-        generate_full_workload(simplified_workload_path, mysql_workload_path, table_attr_names_map)
+        print(f'simplified_workload_path = {simplified_workload_path}')
+        if os.path.exists(simplified_workload_path):
+            replace_term(simplified_workload_path, old_term='$PROJECT_ROOT$', new_term=project_root)
+            mysql_workload_path = os.path.join(workload_dir, 'mysql_workload.sql')
+            generate_full_workload(simplified_workload_path, mysql_workload_path, table_attr_names_map)
 
 
 
@@ -101,3 +105,5 @@ if __name__ == '__main__':
     initialize(cfg)
 
 # python init/initialize.py
+# python init/initialize.py --data tpch100
+# python init/initialize.py --data STATS

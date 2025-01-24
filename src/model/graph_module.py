@@ -21,7 +21,7 @@ class Graph(nn.Module):
         self.num_attn_heads = num_attn_heads
         self.num_weight_tied_layers = num_weight_tied_layers
         if num_weight_tied_layers == 0:
-            self.num_task_attn_layers += 1
+            self.num_attn_layers += 1
 
         self.query_emb_dim = query_emb_dim
         self.attn_mlp_hidden_dim = attn_mlp_hidden_dim
@@ -33,6 +33,7 @@ class Graph(nn.Module):
         self.dropout_rate = dropout_rate
         self.use_float64 = use_float64
         self.fix_keys_in_attn = fix_keys_in_attn
+
 
         self.attn_layers = torch.nn.ModuleList([
             attn.attnBlock(

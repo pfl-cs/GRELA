@@ -74,7 +74,7 @@ class attnBlock(nn.Module):
             self.double()
 
     def forward(self, x, q, attn_mask=None):
-        # Multi-head self-attention output
+        # Multi-head self-attention output (`tf.keras.layers.MultiHeadAttention `).
         attn_output, _ = self.mha(
             query=q,  # Query Q tensor.
             value=x,  # Value V tensor.

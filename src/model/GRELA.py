@@ -38,7 +38,7 @@ class GRELA(nn.Module):
         self.mse_loss = nn.MSELoss(reduction='mean')
 
         # for the task heads
-        # which would be mapped into the updated task embedding later on
+        # which would be mapped into the task embedding later on
         self.task_heads = torch.Tensor(cfg.dataset.num_task, cfg.model.query_emb_dim)
         self.task_heads = nn.Parameter(self.task_heads)
         self.task_heads.data = nn.init.xavier_uniform_(self.task_heads.data, gain=nn.init.calculate_gain('relu'))

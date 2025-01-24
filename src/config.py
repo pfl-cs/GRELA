@@ -23,6 +23,7 @@ def set_cfg(cfg):
     cfg.dataset.FEATURE_DATA_DIR = ""
     cfg.dataset.mask_min_max = True
     cfg.dataset.workload_fname = 'simplified_workload.sql'
+    # cfg.dataset.workload_fname = 'mysql_workload.sql'
 
     cfg.dataset.tables_info_path = ''
     cfg.dataset.create_tables_path = ''
@@ -49,6 +50,7 @@ def set_cfg(cfg):
     # Training (and validation) pipeline mode
     cfg.run.mode = 'standard'
     cfg.run.ckpt_dir = ''
+    cfg.run.exp_dir = ''
     cfg.run.encoder_ckpt_fname = 'encoder'
 
     # TODO: Params that need to be overwrritten
@@ -141,6 +143,11 @@ def set_cfg(cfg):
     # Maximal number of epochs
     cfg.optim.max_epoch = 400
 
+    cfg.sampling = CN()
+    cfg.sampling.sampling_method = 'unisamp'
+    cfg.sampling.sampling_ratio = 0.1
+
+
 
 '''
 ****************************************************************
@@ -148,7 +155,7 @@ Get the user-defined arguments from command line directly
 ****************************************************************
 '''
 def get_arg_parser():
-    parser = argparse.ArgumentParser(description='ALPHA')
+    parser = argparse.ArgumentParser(description='GRELA')
 
     # params of cfg.dataset
     parser.add_argument('--data', type=str, default='STATS', help='')
@@ -196,6 +203,13 @@ def get_arg_parser():
     parser.add_argument('--max_epoch', type=int, default=400, help='')
     parser.add_argument('--base_lr', type=float, default=1e-4, help='')
 
+    # params of cfg.optim
+    parser.add_argument('--sampling_method', type=str, default='unisamp',
+                        help='')
+    parser.add_argument('--sampling_ratio', type=float, default=0.1,
+                        help='')
+
+
 
     args = parser.parse_args()
     return args
@@ -239,7 +253,7 @@ def overwrite_from_args(args, cfg):
     cfg.graph.use_ff = args.use_g_ff
     cfg.graph.fix_keys_in_attn = args.fix_keys_in_attn
 
-    # cfg.run
+
     cfg.run.batch_size = args.batch_size
     cfg.run.train_model = args.train_model
     cfg.run.eval_model = args.eval_model
@@ -253,6 +267,9 @@ def overwrite_from_args(args, cfg):
     cfg.optim.base_lr = args.base_lr
     cfg.optim.max_epoch = args.max_epoch
 
+    cfg.sampling.sampling_method = args.sampling_method
+    cfg.sampling.sampling_ratio = args.sampling_ratio
+
 
 
 
@@ -261,6 +278,7 @@ def set_project_root(cfg, project_root):
     workload_dir = os.path.join(project_root, f'data/{cfg.dataset.name}/workload/{cfg.dataset.wl_type}')
     cfg.dataset.FEATURE_DATA_DIR = os.path.join(workload_dir, f'histogram_{cfg.dataset.n_bins}_features')
     cfg.run.ckpt_dir = os.path.join(project_root, f'ckpt/{cfg.dataset.name}/{cfg.dataset.wl_type}')
+    cfg.run.exp_dir = os.path.join(project_root, f'exp/{cfg.dataset.name}/{cfg.dataset.wl_type}')
 
 
 def getConfigs():
@@ -274,10 +292,10 @@ def getConfigs():
     set_project_root(cfg, str(project_root))
 
     # params of cfg.dataset
-    static_workload_dir = get_workload_dir(cfg, wl_type='static')
     cfg.dataset.data_dir = f'../data/{cfg.dataset.name}/data'
     cfg.dataset.tables_info_path = os.path.join(cfg.dataset.data_dir, 'tables_info.txt')
     cfg.dataset.workload_base_dir = f'../data/{cfg.dataset.name}/workload/'
+    static_workload_dir = get_workload_dir(cfg, wl_type='static')
     cfg.dataset.create_tables_path = os.path.join(static_workload_dir, 'create_tables.sql')
 
     return cfg
@@ -306,3 +324,19 @@ def get_feature_data_dir(cfg, wl_type=None):
     feature_data_dir = os.path.join(workload_dir, f'{data_featurizations_type}_features')
 
     return workload_dir, feature_data_dir
+
+
+def get_rel_error_dir(cfg, wl_type=None):
+    if wl_type is None:
+        wl_type = cfg.dataset.wl_type
+
+    if wl_type != 'static' and wl_type != 'group_by' and wl_type != 'enrich':
+        rel_error_dir = os.path.join(cfg.run.exp_dir, f'{wl_type}_after_{cfg.dataset.dynamic_test_from}/rel_error')
+    elif wl_type == 'group_by':
+        rel_error_dir = os.path.join(cfg.run.exp_dir, 'group_by/rel_error')
+    elif wl_type == 'enrich':
+        rel_error_dir = os.path.join(cfg.run.exp_dir, 'enrich/rel_error')
+    else:
+        rel_error_dir = os.path.join(cfg.run.exp_dir, 'static/rel_error')
+
+    return rel_error_dir

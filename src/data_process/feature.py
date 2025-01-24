@@ -22,7 +22,7 @@ class queryFeature(object):
         self.table_no_map, self.attr_no_map_list, self.attr_no_types_list, self.attr_ranges_list \
             = table_no_map, attr_no_map_list, attr_no_types_list, attr_ranges_list
 
-        self.attr_ranges_all = np.concatenate(attr_ranges_list, axis=0, dtype=np.float64)
+        self.attr_ranges_all = np.concatenate(attr_ranges_list, axis=0, dtype=np.float32)
         self.attr_types_all = np.concatenate(attr_no_types_list, dtype=np.int64)
 
         # for feature calc only
@@ -105,7 +105,7 @@ class queryFeature(object):
         :param sql_attr_ranges_conds: shape=[self.n_attrs_total * 2]
         :return:
         """
-        feature = np.zeros(self.n_tables + self.n_possible_joins + self.n_attrs_total * 2, dtype=np.float64)
+        feature = np.zeros(self.n_tables + self.n_possible_joins + self.n_attrs_total * 2, dtype=np.float32)
 
         # encode tables appeared in query
         feature[relevant_tables] = 1
@@ -133,7 +133,7 @@ class queryFeature(object):
         :return:
         """
         batch_size = len(sql_join_conds_batch)
-        features = np.zeros(shape=[batch_size,self.n_tables + self.n_possible_joins + self.n_attrs_total * 2], dtype=np.float64)
+        features = np.zeros(shape=[batch_size,self.n_tables + self.n_possible_joins + self.n_attrs_total * 2], dtype=np.float32)
         for i in range(batch_size):
             relevant_tables = relevant_tables_list[i]
             # encode tables appeared in query
@@ -204,12 +204,11 @@ def get_valid_data(db_states, query_featurizations, task_values, task_masks, zer
     return db_states, query_featurizations, task_values, task_masks
 
 
-
 def process_workload_data(cfg, wl_type=None):
     if wl_type is None:
         wl_type = cfg.dataset.wl_type
-    assert cfg.dataset.wl_type == 'static' or cfg.dataset.wl_type == 'dynamic'
-    if wl_type == 'static':
+    assert cfg.dataset.wl_type == 'static' or cfg.dataset.wl_type == 'enrich' or cfg.dataset.wl_type == 'group_by' or cfg.dataset.wl_type == 'dynamic' or cfg.dataset.wl_type == 'dist_shift'
+    if wl_type == 'static' or wl_type == 'enrich' or wl_type == 'group_by':
         if_static_workload = True
     else:
         if_static_workload = False
@@ -225,6 +224,7 @@ def process_workload_data(cfg, wl_type=None):
     test_idxes_path = os.path.join(feature_data_dir, 'test_idxes.npy')
     meta_infos_path = os.path.join(feature_data_dir, 'meta_infos.npy')
     analytic_functions_path = os.path.join(feature_data_dir, 'analytic_funcs.txt')
+    # involved_tables_path = os.path.join(feature_data_dir, 'involved_tables.txt')
 
     train_sub_idxes_path = os.path.join(feature_data_dir, 'train_sub_idxes.npy')
     test_sub_idxes_path = os.path.join(feature_data_dir, 'test_sub_idxes.npy')
@@ -232,12 +232,13 @@ def process_workload_data(cfg, wl_type=None):
 
     required_paths = [db_states_path, query_featurizations_path, task_values_path, task_masks_path,
                       train_idxes_path, train_sub_idxes_path, test_idxes_path, test_sub_idxes_path,
-                      test_single_idxes_path, meta_infos_path, analytic_functions_path]
+                      test_single_idxes_path, meta_infos_path, analytic_functions_path]#, involved_tables_path]
 
 
     all_files_exist = True
     for path in required_paths:
         if os.path.exists(path) == False:
+            print(f'{path} does not exist.')
             all_files_exist = False
             break
 
@@ -274,11 +275,22 @@ def process_workload_data(cfg, wl_type=None):
     keep_filter_info = True
     if if_static_workload:
         data_dir = cfg.dataset.data_dir
-        data_feat = staticHistogram.staticDBHistogram(tables_info, data_dir, cfg.dataset.n_bins)
+        keep_checkpoint = False
+        base_histogram_dir = None
+        if cfg.dataset.name == 'tpch100':
+            keep_checkpoint = True
+            base_histogram_dir = os.path.join(workload_dir, 'base_histogram_dir')
+        data_feat = staticHistogram.staticDBHistogram(tables_info, data_dir, cfg.dataset.n_bins,
+                                                      keep_checkpoint=keep_checkpoint,
+                                                      base_histogram_dir=base_histogram_dir)
     else:
+        print(f'workload_path = {workload_path}')
         data_feat = dynamicHistogram.databaseHistogram(tables_info, workload_path, cfg.dataset.n_bins)
     db_states, train_idxes, train_sub_idxes, test_idxes, test_sub_idxes, test_single_idxes, all_queries = data_feat.build_db_states(workload_path)
+
     print(f'\tFinished building DB states.')
+    print(f'\t\tdb_states.shape =', db_states.shape)
+
 
     print('    Query featurizations:')
     queries_info = general_query_process.parse_queries(
@@ -295,7 +307,7 @@ def process_workload_data(cfg, wl_type=None):
     filter_conds_list, analytic_functions_list, valid_task_values_list = queries_info
 
     qF = queryFeature(table_no_map, attr_no_map_list, attr_no_types_list, attr_ranges_list, possible_join_attrs, keep_filter_info=keep_filter_info)
-    attr_range_conds_batch = np.array(attr_range_conds_list, dtype=np.float64)
+    attr_range_conds_batch = np.array(attr_range_conds_list, dtype=np.float32)
     query_featurizations = qF.encode_batch(join_conds_list, attr_range_conds_batch, relevant_tables_list)
     print(f'\tFinished featurizing SQL queries')
 
@@ -318,6 +330,8 @@ def process_workload_data(cfg, wl_type=None):
         n_attrs = len(no_attr_map)
 
         func_types = ['avg({0:s})', 'sum({0:s})', 'min({0:s})', 'max({0:s})']
+        if wl_type == 'enrich':
+            func_types = ['min({0:s})', 'max({0:s})', 'distinct({0:s})', 'stddev({0:s})', ]
         for attr_no in range(n_attrs):
             attr_name = no_attr_map[attr_no]
             table_attr = table_name + '.' + attr_name
@@ -333,7 +347,7 @@ def process_workload_data(cfg, wl_type=None):
     n_tasks = len(analytic_func_task_no_map)
     data_size = db_states.shape[0]
     task_masks = np.zeros(shape=[data_size, n_tasks], dtype=np.int64)
-    task_values = -np.ones(shape=[data_size, n_tasks], dtype=np.float64)
+    task_values = -np.ones(shape=[data_size, n_tasks], dtype=np.float32)
 
     for (i, funcs) in enumerate(analytic_functions_list):
         valid_task_values = valid_task_values_list[i]
@@ -351,6 +365,7 @@ def process_workload_data(cfg, wl_type=None):
         task_masks[i][idxes] = 1
 
     meta_infos = [db_states_dim, num_attrs, n_possible_joins, n_tasks]
+    # histogram_feature_dim, query_part_feature_dim, join_pattern_dim, _n_parts, num_attrs]
     meta_infos = np.array(meta_infos, dtype=np.int64)
 
 
@@ -377,9 +392,105 @@ def process_workload_data(cfg, wl_type=None):
             test_idxes, test_sub_idxes, test_single_idxes, meta_infos.tolist())
 
 
+def get_base_histograms(cfg, wl_type=None):
+    if wl_type is None:
+        wl_type = cfg.dataset.wl_type
+    assert cfg.dataset.wl_type == 'static' or cfg.dataset.wl_type == 'enrich' or cfg.dataset.wl_type == 'group_by' or cfg.dataset.wl_type == 'dynamic' or cfg.dataset.wl_type == 'dist_shift'
+    if wl_type == 'static' or wl_type == 'enrich' or wl_type == 'group_by':
+        if_static_workload = True
+    else:
+        if_static_workload = False
+    workload_dir, feature_data_dir = config.get_feature_data_dir(cfg, wl_type)
+    workload_path = os.path.join(workload_dir, cfg.dataset.workload_fname)
+    FileViewer.detect_and_create_dir(feature_data_dir)
+
+    db_states_path = os.path.join(feature_data_dir, 'db_states.npy')
+    query_featurizations_path = os.path.join(feature_data_dir, 'query_featurizations.npy')
+    task_values_path = os.path.join(feature_data_dir, 'task_values.npy')
+    task_masks_path = os.path.join(feature_data_dir, 'task_masks.npy')
+    train_idxes_path = os.path.join(feature_data_dir, 'train_idxes.npy')
+    test_idxes_path = os.path.join(feature_data_dir, 'test_idxes.npy')
+    meta_infos_path = os.path.join(feature_data_dir, 'meta_infos.npy')
+    analytic_functions_path = os.path.join(feature_data_dir, 'analytic_funcs.txt')
+    # involved_tables_path = os.path.join(feature_data_dir, 'involved_tables.txt')
+
+    train_sub_idxes_path = os.path.join(feature_data_dir, 'train_sub_idxes.npy')
+    test_sub_idxes_path = os.path.join(feature_data_dir, 'test_sub_idxes.npy')
+    test_single_idxes_path = os.path.join(feature_data_dir, 'test_single_idxes.npy')
+
+    required_paths = [db_states_path, query_featurizations_path, task_values_path, task_masks_path,
+                      train_idxes_path, train_sub_idxes_path, test_idxes_path, test_sub_idxes_path,
+                      test_single_idxes_path, meta_infos_path, analytic_functions_path]#, involved_tables_path]
+
+
+    all_files_exist = True
+    for path in required_paths:
+        if os.path.exists(path) == False:
+            print(f'{path} does not exist.')
+            all_files_exist = False
+            break
+
+    if all_files_exist:
+        db_states = np.load(db_states_path)
+        query_featurizations = np.load(query_featurizations_path)
+        task_values = np.load(task_values_path)
+        task_masks = np.load(task_masks_path)
+
+        train_idxes = np.load(train_idxes_path)
+        train_sub_idxes = np.load(train_sub_idxes_path)
+        test_idxes = np.load(test_idxes_path)
+        test_sub_idxes = np.load(test_sub_idxes_path)
+        test_single_idxes = np.load(test_single_idxes_path)
+        meta_infos = np.load(meta_infos_path).tolist()
+        [db_states_dim, num_attrs, n_possible_joins, n_tasks] = meta_infos
+
+        # print('db_states.shape =', db_states.shape)
+        # print('query_featurizations.shape =', query_featurizations.shape)
+        # print('train_idxes.shape =', train_idxes.shape)
+        # print('test_idxes.shape =', test_idxes.shape)
+
+        return (db_states, query_featurizations, task_values, task_masks, train_idxes, train_sub_idxes, test_idxes, test_sub_idxes, test_single_idxes, meta_infos)
+
+    tables_info = schema.get_tables_info(cfg)
+    table_no_map, no_table_map, table_card_list, attr_no_map_list \
+        , attr_no_types_list, attr_ranges_list = tables_info
+
+    num_attrs = 0
+    for attr_no_map in attr_no_map_list:
+        num_attrs += len(attr_no_map)
+
+    print('    DB states:')
+    keep_filter_info = True
+    if if_static_workload:
+        data_dir = cfg.dataset.data_dir
+        keep_checkpoint = False
+        base_histogram_dir = None
+        if cfg.dataset.name == 'tpch100':
+            keep_checkpoint = True
+            base_histogram_dir = os.path.join(workload_dir, 'base_histogram_dir')
+        data_feat = staticHistogram.staticDBHistogram(tables_info, data_dir, cfg.dataset.n_bins, keep_checkpoint=keep_checkpoint, base_histogram_dir=base_histogram_dir)
+    else:
+        print(f'workload_path = {workload_path}')
+        data_feat = dynamicHistogram.databaseHistogram(tables_info, workload_path, cfg.dataset.n_bins)
+
+    x = input()
+    #     "Be careful! \n"
+    #     "Is the new workload file generated?\n"
+    #     "Does the remote_hosts list contain suitable hosts?\n"
+    #     "If so, press 1 and delete those files.\n")
+    # x = int(x)
+    print(x)
+
+
+
 if __name__ == '__main__':
     cfg = config.getConfigs()
     process_workload_data(cfg)
+    # get_base_histograms(cfg)
 
 # python data_process/feature.py --data STATS --wl_type static
+# python data_process/feature.py --data STATS --wl_type group_by
 # python data_process/feature.py --data STATS --wl_type dynamic
+# python data_process/feature.py --data STATS --wl_type dist_shift
+
+# python data_process/feature.py --data tpch100 --wl_type static

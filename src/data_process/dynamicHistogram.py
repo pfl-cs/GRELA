@@ -33,12 +33,13 @@ class tableHistogram(object):
                 for i, _term in enumerate(terms):
                     term = _term.strip()
                     if len(term) > 0:
+                        # print('term =', term)
                         val = float(term)
                         initial_data[i].append(val)
-            initial_data = [np.sort(np.array(data_i, dtype=np.float64)) for data_i in initial_data]
+            initial_data = [np.sort(np.array(data_i, dtype=np.float32)) for data_i in initial_data]
             boundary_points = []
             for k in range(self.n_attrs):
-                arange_idxes = np.reshape(np.arange(1, self.n_bins + 1, dtype=np.float64), [1, -1])
+                arange_idxes = np.reshape(np.arange(1, self.n_bins + 1, dtype=np.float32), [1, -1])
                 boundary_points.append(arange_idxes)
             boundary_points = np.concatenate(boundary_points, axis=0)
             boundary_points *= np.reshape(self.bin_sizes, [-1, 1])
@@ -59,22 +60,22 @@ class tableHistogram(object):
                 sorted_idxes_left_translation[0] = 0
                 diff = sorted_idxes - sorted_idxes_left_translation
                 self.histogram.append(np.reshape(diff, [1, -1]))
-            self.histogram = np.concatenate(self.histogram, axis=0, dtype=np.float64)
+            self.histogram = np.concatenate(self.histogram, axis=0, dtype=np.float32)
         else:
-            self.histogram = np.zeros(shape=[self.n_attrs, self.n_bins], dtype=np.float64)
+            self.histogram = np.zeros(shape=[self.n_attrs, self.n_bins], dtype=np.float32)
 
     def insert(self, insert_values_str):
         _values = insert_values_str.split(",")
         assert len(_values) == self.n_attrs
 
-        values = np.array([float(x) for x in _values], dtype=np.float64)
+        values = np.array([float(x) for x in _values], dtype=np.float32)
         self.insert_one_row(values)
 
 
     def delete(self, delete_values_str):
         _values = delete_values_str.split(",")
         assert len(_values) == self.n_attrs
-        values = np.array([float(x) for x in _values], dtype=np.float64)
+        values = np.array([float(x) for x in _values], dtype=np.float32)
         self.delete_one_row(values)
 
     def update(self, update_values_str):
@@ -82,10 +83,10 @@ class tableHistogram(object):
         assert len(terms) == 2
         _values_0 = terms[0].split(",")
         assert len(_values_0) == self.n_attrs
-        values_0 = np.array([float(x) for x in _values_0], dtype=np.float64)
+        values_0 = np.array([float(x) for x in _values_0], dtype=np.float32)
         _values_1 = terms[1].split(",")
         assert len(_values_1) == self.n_attrs
-        values_1 = np.array([float(x) for x in _values_1], dtype=np.float64)
+        values_1 = np.array([float(x) for x in _values_1], dtype=np.float32)
         self.delete_one_row(values_0)
         self.insert_one_row(values_1)
 
@@ -140,6 +141,8 @@ class databaseHistogram(object):
                 break
             terms = line.split(' ')
             path = terms[4][1:-1]
+            if not os.path.exists(path):
+                print(f'{path} does not exist.')
             assert os.path.exists(path)
             fname = os.path.basename(path)
             table_info = fname[0:-4]
@@ -287,7 +290,7 @@ class databaseHistogram(object):
 
     def build_db_states(self, workload_path):
         self._build_db_states(workload_path)
-        histogram_features = np.array(self.histogram_features, dtype=np.float64)
+        histogram_features = np.array(self.histogram_features, dtype=np.float32)
         num_inserts_before_queries = np.array(self.num_inserts_before_queries, dtype=np.int64)
         train_idxes = np.array(self.train_idxes, dtype=np.int64)
         train_sub_idxes = np.array(self.train_sub_idxes, dtype=np.int64)

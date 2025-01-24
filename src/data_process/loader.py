@@ -123,7 +123,7 @@ def load_workload_data(cfg):
     db_states, query_featurizations, task_values, task_masks, train_idxes, train_sub_idxes \
         , test_idxes, test_sub_idxes, _, meta_infos = feature.process_workload_data(cfg, wl_type)
 
-    if wl_type == 'static':
+    if wl_type == 'static' or wl_type == 'enrich' or wl_type == 'group_by':
         assert train_sub_idxes.shape[0] == 0
         assert test_sub_idxes.shape[0] == 0
     else:  # specifically implemented for the dynamic workload, the first six lines are hard-coded
@@ -139,6 +139,7 @@ def load_workload_data(cfg):
         # assert num_per_train == 998 # the STATS dynamic workload
         num_per_train_sub = train_sub_idxes.shape[0] // num_train_parts
 
+        # process train idxes
         train_start = 0
         train_end = num_per_train * num_parts
         train_sub_start = 0
@@ -150,11 +151,8 @@ def load_workload_data(cfg):
 
         train_idxes = np.sort(train_idxes)
 
-        train_db_states = db_states[train_idxes]
-        train_query_featurizations = query_featurizations[train_idxes]
-        train_task_values = task_values[train_idxes]
-        train_task_masks = task_masks[train_idxes]
 
+        # process test idxes
         test_start = (num_parts + test_from) * num_per_test
         test_end = (num_parts + test_to) * num_per_test
         test_sub_start = (num_parts + test_from) * num_per_test_sub
@@ -166,6 +164,13 @@ def load_workload_data(cfg):
         test_idxes = np.concatenate([test_idxes, test_sub_idxes])
         test_idxes = np.sort(test_idxes)
 
+        # get training data
+        train_db_states = db_states[train_idxes]
+        train_query_featurizations = query_featurizations[train_idxes]
+        train_task_values = task_values[train_idxes]
+        train_task_masks = task_masks[train_idxes]
+
+        # get testing data
         test_db_states = db_states[test_idxes]
         test_query_featurizations = query_featurizations[test_idxes]
         test_task_values = task_values[test_idxes]
@@ -425,7 +430,7 @@ def load_data(cfg):
     test_task_values, test_task_masks, origin_test_task_masks = process_task_values(test_task_values, test_task_masks, task_value_norm_params, origin_test_task_masks)
     processed_train_masks_path = os.path.join(cfg.dataset.FEATURE_DATA_DIR, 'processed_train_masks.npy')
     processed_test_masks_path = os.path.join(cfg.dataset.FEATURE_DATA_DIR, 'processed_test_masks.npy')
-    if cfg.dataset.wl_type != 'static':
+    if cfg.dataset.wl_type != 'static' and cfg.dataset.wl_type != 'enrich' and cfg.dataset.wl_type != 'group_by':
         processed_train_masks_path = os.path.join(cfg.dataset.FEATURE_DATA_DIR, f'processed_train_masks_{cfg.dataset.dynamic_test_from}_{cfg.dataset.dynamic_test_to}.npy')
         processed_test_masks_path = os.path.join(cfg.dataset.FEATURE_DATA_DIR, f'processed_test_masks_{cfg.dataset.dynamic_test_from}_{cfg.dataset.dynamic_test_to}.npy')
     if not (os.path.exists(processed_test_masks_path) or os.path.exists(processed_train_masks_path)):
@@ -459,13 +464,18 @@ def load_data(cfg):
     train_task_values = train_task_values[shuffle_idxes]
     train_task_masks = train_task_masks[shuffle_idxes]
 
+    '''
+    The following code snippet is only used for testing
+    overfitting issue that might be caused by PyTorch 
+    implementation
+    '''
     # split the training data into two parts
     N_train = int(N_train * 0.9)
     validation_db_states = train_db_states[N_train:]
     validation_query_featurizations = train_query_featurizations[N_train:]
     validation_task_values = train_task_values[N_train:]
     validation_task_masks = train_task_masks[N_train:]
-
+    #
     train_db_states = train_db_states[0:N_train]
     train_query_featurizations = train_query_featurizations[0:N_train]
     train_task_values = train_task_values[0:N_train]
@@ -485,3 +495,4 @@ def load_data(cfg):
     # print('test_masks.shape =', test_task_masks.shape)
 
     return (train_data, validation_data, test_data, original_test_task_values, task_value_norm_params)
+
